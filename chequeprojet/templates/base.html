@@ -1,0 +1,92 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Home | Cheque Verification</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+
+    <style>
+        *{margin:0; padding:0; box-sizing:border-box; font-family:'Inter', sans-serif;}
+        body{min-height:100vh; background:url('{% static "images/bg.jpg" %}') center/cover fixed; color:#111;}
+        .overlay{min-height:100vh; background:rgba(255,255,255,0.4); backdrop-filter:blur(5px);}
+
+        /* RESPONSIVE NAVBAR */
+        .navbar{
+            display:flex; justify-content:space-between; align-items:center;
+            padding:20px 8%; background:rgba(255,255,255,0.85);
+            backdrop-filter:blur(15px); border-bottom:1px solid rgba(0,0,0,0.1);
+            position:sticky; top:0; z-index:1000;
+        }
+        .navbar-brand{font-size:1.5rem; font-weight:800; color:#000; letter-spacing:-0.5px;}
+        .navbar ul{list-style:none; display:flex; gap:15px;}
+        .navbar ul li a{
+            text-decoration:none; color:#333; font-weight:600; font-size:0.9rem;
+            padding:10px 16px; border-radius:12px; transition:0.3s;
+            display:flex; align-items:center; gap:8px;
+        }
+        .navbar ul li a i{font-size:1.1rem;}
+        .navbar ul li a:hover{background:rgba(0,122,255,0.1); color:#007aff;}
+        .navbar ul li a.active{background:#007aff; color:#fff;}
+
+        /* MOBILE NAV */
+        @media(max-width:768px){
+            .navbar{padding:15px 5%; flex-direction:column; gap:10px;}
+            .navbar-brand{font-size:1.2rem;}
+            .navbar ul{width:100%; justify-content:space-around; gap:5px;}
+            .navbar ul li a{padding:8px 10px; flex-direction:column; font-size:0.75rem; gap:4px;}
+        }
+
+        .content{padding:100px 5%; display:flex; justify-content:center; align-items:center; text-align:center;}
+        .hero-card{
+            width:100%; max-width:850px; padding:60px;
+            background:rgba(255,255,255,0.7); border-radius:40px;
+            backdrop-filter:blur(10px); border:1px solid rgba(255,255,255,0.4);
+            box-shadow:0 30px 80px rgba(0,0,0,0.1);
+        }
+        .hero-card h1{
+            font-size:3rem; font-weight:900; color:#000; line-height:1.2;
+            letter-spacing:-1.5px; margin-bottom:30px;
+        }
+        .hero-card p{
+            font-size:1.4rem; color:#333; line-height:1.8; font-weight:500;
+        }
+
+        @media(max-width:768px){
+            .hero-card h1{font-size:2rem;}
+            .hero-card{padding:40px 20px;}
+        }
+
+        footer{text-align:center; padding:40px; color:#777; font-size:0.85rem;}
+    </style>
+</head>
+<body>
+<div class="overlay">
+
+    <nav class="navbar">
+        <div class="navbar-brand">🏦 Cheque Verification</div>
+        <ul>
+            <li><a href="{% url 'basefunction' %}" class="active"><i class="fa-solid fa-house"></i> <span>Home</span></a></li>
+            <li><a href="/userlogin/" id="login-link"><i class="fa-solid fa-right-to-bracket"></i> <span>Login</span></a></li>
+            <li><a href="{% url 'register' %}" id="join-link"><i class="fa-solid fa-user-plus"></i> <span>Join</span></a></li>
+        </ul>
+    </nav>
+
+    <div class="content">
+        <div class="hero-card">
+            <h1>Verifying Bank Cheques using Deep Learning and Image Processing</h1>
+            <p>
+                Experience the next generation of automated cheque validation and information extraction 
+                powered by state-of-the-art AI models.
+            </p>
+        </div>
+    </div>
+
+    <footer>
+        © 2026 Cheque Verification System | Intelligent Financial Solutions
+    </footer>
+</div>
+</body>
+</html>

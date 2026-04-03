@@ -4,8 +4,8 @@ import { WebView } from 'react-native-webview';
 
 export default function App() {
   const DJANGO_SERVER_URL = Platform.select({
-    web: 'https://cheque-app-7cem.onrender.com',
-    default: 'https://cheque-app-7cem.onrender.com',
+    web: 'https://cheque-app-7cem.onrender.com/userlogin/',
+    default: 'https://cheque-app-7cem.onrender.com/userlogin/',
   });
 
 

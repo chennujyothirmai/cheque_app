@@ -1,0 +1,12 @@
+# THIS FILE MUST BE IN THE ROOT HUB (chequeproject33)
+# Ignore everything EXCEPT the mobile app
+chequeprojet/
+test-app/
+.venv/
+.vscode/
+media/
+static/
+*flake8*
+*.pth
+*.sqlite3
+**/node_modules/

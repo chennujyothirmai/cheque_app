@@ -1,0 +1,10 @@
+# Ignore the backend folder during mobile builds
+chequeprojet/
+test-app/
+node_modules/
+.venv/
+*.pth
+*.sqlite3
+media/
+static/
+flake8_*.txt

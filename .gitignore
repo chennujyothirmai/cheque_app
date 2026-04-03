@@ -28,3 +28,4 @@ Thumbs.db
 *.txt
 *.log
 !README.md
+!requirements.txt

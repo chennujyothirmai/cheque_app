@@ -4,9 +4,12 @@ import traceback
 
 import google.generativeai as genai
 
+import os
+
 # Unified API Configuration
-# Note: Ensure this API key is valid and has Gemini 1.5 access
-genai.configure(api_key="AIzaSyALNXMUxpVnDQ9-jVlVo02rXjLC0hwCSy0")
+# Prioritize environment variable for security and flexibility
+api_key = os.environ.get("GOOGLE_API_KEY", "AIzaSyCmbq7S3wcMTJhMVqvDzWZWXUWx_Lh3boE")
+genai.configure(api_key=api_key)
 
 
 from PIL import Image

@@ -152,25 +152,14 @@ def logout_view(request):
 
 
 def cheque_samples(request):
-    print("===== DEBUG: Cheque Samples View Loaded =====")
-
-    dataset_dir = os.path.join(
-        settings.MEDIA_ROOT, "cheque_data/images/train/fixed"
-    )
-
-    print("Fixed Dataset Path:", dataset_dir)
-    print("Path exists:", os.path.exists(dataset_dir))
-
+    dataset_dir = os.path.join(settings.MEDIA_ROOT, "cheque_data/images/train/fixed")
     images = []
     if os.path.exists(dataset_dir):
         for f in os.listdir(dataset_dir):
-            if f.lower().endswith(".jpg"):
-                images.append(
-                    f"{settings.MEDIA_URL}cheque_data/images/train/fixed/{f}"
-                )
-
-    print("Sending these image URLs:", images[:5])  # print first 5 for debug
-
+            if f.lower().endswith((".png", ".jpg", ".jpeg")):
+                images.append(settings.MEDIA_URL + "cheque_data/images/train/fixed/" + f)
+                if len(images) >= 12:  # Limit images to avoid overload
+                    break
     return render(request, "ChequeSamples.html", {"images": images})
 
 
@@ -442,12 +431,13 @@ def model_evaluation(request):
     y_sig = np.array(y_sig)
 
     # Prevent crash if dataset empty
-    if len(X_sig) == 0:
+    if not os.path.exists(real_dir) or len(X_sig) == 0:
         return render(
             request,
             "ModelEvaluation.html",
             {
-                "sig_error": "No signature samples found in dataset!",
+                "sig_error": "Signature dataset not found on server yet!",
+                "digit_acc": 0, "digit_pre": 0, "digit_rec": 0, "digit_f1": 0
             },
         )
 

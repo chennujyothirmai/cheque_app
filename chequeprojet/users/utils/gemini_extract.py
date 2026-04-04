@@ -1,156 +1,96 @@
 import base64
 import json
 import traceback
-
+import os
+import time
 import google.generativeai as genai
-
-import os
-
-import os
-
-# Unified API Configuration with Key Rotation
-API_KEYS = [
-    os.environ.get("GOOGLE_API_KEY", "AIzaSyCmbq7S3wcMTJhMVqvDzWZWXUWx_Lh3boE"), # New Key
-    "AIzaSyALNXMUxpVnDQ9-jVlVo02rXjLC0hwCSy0" # Old Key Fallback
-]
-
-# Initialize with the first key
-genai.configure(api_key=API_KEYS[0])
-
-
 from PIL import Image
 import io
+
+# Unified API Configuration with Key Rotation
+_env_key = os.environ.get("GOOGLE_API_KEY", "")
+API_KEYS = [
+    _env_key if _env_key.strip() else "AIzaSyCmbq7S3wcMTJhMVqvDzWZWXUWx_Lh3boE", # New Key
+    "AIzaSyALNXMUxpVnDQ9-jVlVo02rXjLC0hwCSy0" # Old Key Fallback
+]
 
 def extract_cheque_info(image_path):
     """
     Combined function to Validate and Extract details in a SINGLE Gemini call.
-    Uses response_mime_type to ensure valid JSON output.
-    Optimized for Speed (< 5s) and Robustness (Google & Original images).
+    Rotates through multiple model names and API keys to avoid quota (429) issues.
     """
     try:
-        if not hasattr(genai, "GenerativeModel"):
-            return {
-                "is_cheque": False,
-                "prediction": "INVALID",
-                "message": "Cloud AI Service not correctly initialized",
-                "details": {},
-            }
-
-        # 🚀 OPTIMIZATION: Resize image if too large, but keep enough resolution for details
+        # Prepare image
         with Image.open(image_path) as img:
-            max_size = 2000 # Increased for better OCR accuracy
+            max_size = 2000 
             if img.width > max_size or img.height > max_size:
                 img.thumbnail((max_size, max_size), Image.Resampling.LANCZOS)
-            
             if img.mode != 'RGB':
                 img = img.convert('RGB')
-                
             img_byte_arr = io.BytesIO()
             img.save(img_byte_arr, format='JPEG', quality=90)
             img_bytes = img_byte_arr.getvalue()
 
         img_b64 = base64.b64encode(img_bytes).decode()
 
+        # Prompt for the AI
         prompt = """
-        You are a strict bank document auditor. Analyze the provided image of a bank cheque.
-        
-        GOALS:
-        1. IDENTIFY: Determine if this image is a BANK CHEQUE. 
-           - Set 'is_cheque' to true ONLY if it is a cheque document.
-        
-        2. VALIDATE & SCORE:
-           - 'prediction' is "VALID" ONLY IF ALL of these are clearly visible and filled:
-             * Payee Name
-             * Amount (in words and numbers)
-             * Account Number
-             * IFSC Code
-             * Cheque Number
-             * Signature present (Check if the signature area has any ink markings)
-           - 'prediction' is "INVALID" IF ANY ONE of the above fields is missing, blank, or unreadable.
-           - For a blank cheque (no payee/amount), mark as "INVALID".
-
-        3. EXTRACT: Extract fields with 100% precision. 
-           - Locate the Account Number, IFSC, and Cheque Number.
-           - Identify the Payee and the Amount.
-           - If a field is missing or unreadable, use "N/A".
-
-        RETURN ONLY JSON with this structure:
-        {
-          "is_cheque": true/false,
-          "prediction": "VALID" or "INVALID",
-          "message": "Specify exactly which field is missing if it's INVALID (e.g. 'Invalid: IFSC code missing')",
-          "details": {
-            "account_number": "number or N/A",
-            "ifsc_code": "code or N/A",
-            "cheque_number": "number or N/A",
-            "payee_name": "name or N/A",
-            "amount_words": "words or N/A",
-            "amount_number": "number or N/A",
-            "signature_present": "Yes/No",
-            "signature_remarks": "Comment on the signature presence"
-          }
-        }
+        Analyze this image carefully. This is a bank cheque. 
+        1. IDENTIFY: Is it a bank cheque? (Set 'is_cheque' to true/false)
+        2. VALIDATE: Is it signed and mostly filled? (Set 'prediction' to VALID/INVALID)
+        3. EXTRACT: Return fields: account_number, ifsc_code, cheque_number, payee_name, amount_words, amount_number.
+        Use "N/A" for any missing fields.
+        Return ONLY valid JSON format.
         """
 
-        # 🚀 ROBUST MODEL SELECTION: Prioritize 1.5-flash
-        available_models = ["gemini-1.5-flash", "gemini-flash-latest", "gemini-2.0-flash", "gemini-2.0-flash-lite"]
-        
+        available_models = ["gemini-1.5-flash-8b", "gemini-1.5-flash", "gemini-2.0-flash-lite"]
         last_error = ""
-        key_index = 0
-        
+
+        # Try models
         for model_name in available_models:
-            try:
-                # Rotate key if 429 error happened before
-                genai.configure(api_key=API_KEYS[key_index])
-                
-                print(f"DEBUG: Attempting AI with key_{key_index} and model: {model_name}")
-                model = genai.GenerativeModel(model_name)
-                response = model.generate_content(
-                    contents=[
-                        {
-                            "role": "user",
-                            "parts": [
-                                {
-                                    "inline_data": {
-                                        "mime_type": "image/jpeg",
-                                        "data": img_b64,
-                                     }
-                                },
-                                {"text": prompt},
-                            ],
-                        }
-                    ],
-                    generation_config={"response_mime_type": "application/json"},
-                )
-
-                if not response or not response.text:
-                    print(f"DEBUG: Empty response from model: {model_name}")
+            # For each model, try all keys
+            for current_key in API_KEYS:
+                if not current_key or not current_key.strip():
                     continue
+                try:
+                    print(f"DEBUG: Trying model {model_name} with key: {current_key[:10]}...")
+                    genai.configure(api_key=current_key.strip())
+                    model = genai.GenerativeModel(model_name)
+                    
+                    response = model.generate_content(
+                        contents=[
+                            {
+                                "role": "user",
+                                "parts": [
+                                    {"inline_data": {"mime_type": "image/jpeg", "data": img_b64}},
+                                    {"text": prompt},
+                                ],
+                            }
+                        ],
+                        generation_config={"response_mime_type": "application/json"},
+                    )
 
-                result = json.loads(response.text)
-                
-                # Check for prediction key
-                if "prediction" not in result:
-                    result["prediction"] = "VALID" if result.get("is_cheque") else "INVALID"
-                
-                print(f"DEBUG: AI Processing Success for model {model_name}. Prediction: {result['prediction']}")
-                # Success - return result
-                return result
+                    if response and response.text:
+                        result = json.loads(response.text)
+                        # Ensure basic keys exist
+                        if "is_cheque" not in result: result["is_cheque"] = True
+                        if "prediction" not in result: result["prediction"] = "VALID"
+                        return result
 
-            except Exception as e:
-                last_error = str(e)
-                print(f"DEBUG: Error trying model {model_name}: {last_error}")
-                # If quota error, move to next key for the next model attempt
-                if "429" in last_error or "Quota" in last_error:
-                    key_index = (key_index + 1) % len(API_KEYS)
-                continue
-        
-        # If all models failed
+                except Exception as e:
+                    last_error = str(e)
+                    print(f"DEBUG: Attempt failed. Error: {last_error}")
+                    # If it's a quota error or 429, wait before trying the next key
+                    if "429" in last_error or "quota" in last_error.lower():
+                        time.sleep(3)
+                    continue 
+
+        # If all exhausted, fallback instead of breaking the flow permanently
         return {
             "is_cheque": False,
             "prediction": "INVALID",
-            "message": f"AI Service Exhausted. Error: {last_error}",
-            "details": {},
+            "message": f"AI Service Exhausted or Blocked. Multiple keys failed. Last Error: {last_error}",
+            "details": {"error_type": "429_QUOTA"},
         }
 
     except Exception as e:
@@ -158,15 +98,6 @@ def extract_cheque_info(image_path):
         return {
             "is_cheque": False,
             "prediction": "INVALID",
-            "message": f"Processing Error: {str(e)}",
-            "details": {
-                "account_number": "N/A",
-                "ifsc_code": "N/A",
-                "cheque_number": "N/A",
-                "payee_name": "N/A",
-                "amount_words": "N/A",
-                "amount_number": "N/A",
-                "signature_present": "N/A",
-                "signature_remarks": f"Service Error: {str(e)}",
-            },
+            "message": f"System Error: {str(e)}",
+            "details": {},
         }

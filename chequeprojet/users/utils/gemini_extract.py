@@ -6,10 +6,16 @@ import google.generativeai as genai
 
 import os
 
-# Unified API Configuration
-# Prioritize environment variable for security and flexibility
-api_key = os.environ.get("GOOGLE_API_KEY", "AIzaSyCmbq7S3wcMTJhMVqvDzWZWXUWx_Lh3boE")
-genai.configure(api_key=api_key)
+import os
+
+# Unified API Configuration with Key Rotation
+API_KEYS = [
+    os.environ.get("GOOGLE_API_KEY", "AIzaSyCmbq7S3wcMTJhMVqvDzWZWXUWx_Lh3boE"), # New Key
+    "AIzaSyALNXMUxpVnDQ9-jVlVo02rXjLC0hwCSy0" # Old Key Fallback
+]
+
+# Initialize with the first key
+genai.configure(api_key=API_KEYS[0])
 
 
 from PIL import Image
@@ -86,13 +92,18 @@ def extract_cheque_info(image_path):
         }
         """
 
-        # 🚀 ROBUST MODEL SELECTION: Prioritize 1.5-flash for better free-tier limits
+        # 🚀 ROBUST MODEL SELECTION: Prioritize 1.5-flash
         available_models = ["gemini-1.5-flash", "gemini-flash-latest", "gemini-2.0-flash", "gemini-2.0-flash-lite"]
         
         last_error = ""
+        key_index = 0
+        
         for model_name in available_models:
             try:
-                print(f"DEBUG: Attempting AI processing with model: {model_name}")
+                # Rotate key if 429 error happened before
+                genai.configure(api_key=API_KEYS[key_index])
+                
+                print(f"DEBUG: Attempting AI with key_{key_index} and model: {model_name}")
                 model = genai.GenerativeModel(model_name)
                 response = model.generate_content(
                     contents=[
@@ -128,8 +139,11 @@ def extract_cheque_info(image_path):
 
             except Exception as e:
                 last_error = str(e)
-                print(f"DEBUG: Model {model_name} failed: {last_error}")
-                continue # Try next model
+                print(f"DEBUG: Error trying model {model_name}: {last_error}")
+                # If quota error, move to next key for the next model attempt
+                if "429" in last_error or "Quota" in last_error:
+                    key_index = (key_index + 1) % len(API_KEYS)
+                continue
         
         # If all models failed
         return {

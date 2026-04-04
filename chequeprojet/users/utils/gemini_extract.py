@@ -86,8 +86,8 @@ def extract_cheque_info(image_path):
         }
         """
 
-        # 🚀 ROBUST MODEL SELECTION: Try multiple models in case of Quota (429) or 404
-        available_models = ["gemini-flash-latest", "gemini-1.5-flash", "gemini-2.0-flash-lite", "gemini-2.0-flash"]
+        # 🚀 ROBUST MODEL SELECTION: Prioritize 1.5-flash for better free-tier limits
+        available_models = ["gemini-1.5-flash", "gemini-flash-latest", "gemini-2.0-flash", "gemini-2.0-flash-lite"]
         
         last_error = ""
         for model_name in available_models:

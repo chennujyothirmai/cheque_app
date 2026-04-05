@@ -10,8 +10,10 @@ import io
 # Unified API Configuration with Key Rotation
 _env_key = os.environ.get("GOOGLE_API_KEY", "")
 API_KEYS = [
-    _env_key if _env_key.strip() else "AIzaSyCmbq7S3wcMTJhMVqvDzWZWXUWx_Lh3boE", # New Key
-    "AIzaSyALNXMUxpVnDQ9-jVlVo02rXjLC0hwCSy0" # Old Key Fallback
+    _env_key if _env_key.strip() else "AIzaSyDl9bhHCLHlWLn8EMsS8qHvTX7pemI8dUI",  # Brand New Key (Priority 1)
+    "AIzaSyAhh2_IB541BDVi_rvXCZjntyxOGvVQbzA",  # Working Old Key (Priority 2)
+    "AIzaSyCmbq7S3wcMTJhMVqvDzWZWXUWx_Lh3boE",  # Previous Key (Fallback)
+    "AIzaSyALNXMUxpVnDQ9-jVlVo02rXjLC0hwCSy0"   # V1 Key (Fallback)
 ]
 
 def extract_cheque_info(image_path):

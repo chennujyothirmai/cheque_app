@@ -45,7 +45,7 @@ def extract_cheque_info(image_path):
         Return ONLY valid JSON format.
         """
 
-        available_models = ["gemini-1.5-flash-8b", "gemini-1.5-flash", "gemini-2.0-flash-lite"]
+        available_models = ["gemini-2.0-flash", "gemini-2.5-flash", "gemini-1.5-flash", "gemini-1.5-flash-8b", "gemini-2.0-flash-lite"]
         last_error = ""
 
         # Try models
